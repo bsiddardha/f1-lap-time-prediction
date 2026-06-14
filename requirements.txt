@@ -3,7 +3,8 @@ fastf1
 numpy
 pandas
 scikit-learn
-xgboostjoblib
+xgboost
+joblib
 python-dateutil
 requests
 python-dotenv
