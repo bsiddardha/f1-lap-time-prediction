@@ -1,0 +1,19 @@
+name: Deployment 
+
+on:
+  push:
+    branches:
+      - main 
+
+
+jobs:
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - run : echo "${{secrets.DOCKER_HUB_PASSWORD}}" | docker login -u ${{secrets.DOCKER_HUB_USERNAME}} --password-stdin
+      - run: docker build -t bsiddardha/f1-lap-time-prediction:latest .
+      - run: docker push bsiddardha/f1-lap-time-prediction:latest
+      
