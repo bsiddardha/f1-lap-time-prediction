@@ -4,65 +4,42 @@ import joblib
 
 app = Flask(__name__)
 
-# Load model
-model = joblib.load("f1_xgboost_model.pkl")
+model = joblib.load("xgboost_model.pkl")
+feature_columns = joblib.load("feature_columns.pkl")
 
-# Load feature columns
-feature_columns = joblib.load("f1_feature_columns.pkl")
-
+CAT_COLS = ["Driver", "Team", "Circuit", "Compound"]
+NUM_COLS = ["TrackStatus", "InPit", "LapNumber", "Position", "Stint",
+            "TyreLife", "PrevLapTime", "AvgLast3Laps", "AvgLast5Laps",
+            "AirTemp", "TrackTemp", "Humidity", "Rainfall"]
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
-
 @app.route("/predict", methods=["POST"])
 def predict():
-
     try:
-
-        # Receive JSON from fetch()
         data = request.get_json()
-
-        # Convert to DataFrame
         df = pd.DataFrame([data])
 
-        # Same encoding used during training
-        df = pd.get_dummies(
-            df,
-            columns=[
-                "Driver",
-                "Team",
-                "Circuit",
-                "Compound",
-                "TrackStatus"
-            ]
-        )
+        # Cast categoricals
+        for col in CAT_COLS:
+            if col in df.columns:
+                df[col] = df[col].astype("category")
 
-        # Match training columns
-        df = df.reindex(
-            columns=feature_columns,
-            fill_value=0
-        )
+        # Cast numerics — this fixes the TrackStatus: object error
+        for col in NUM_COLS:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
 
-        # Predict
+        # Reorder columns to match training
+        df = df[feature_columns]
+
         prediction = model.predict(df)[0]
-
-        return jsonify({
-            "predicted_next_lap_time":
-                round(float(prediction), 3)
-        })
+        return jsonify({"predicted_next_lap_time": round(float(prediction), 3)})
 
     except Exception as e:
-
-        return jsonify({
-            "error": str(e)
-        }), 500
-
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0",
-        port=5000,
-        debug=True
-    )
+    app.run(host="0.0.0.0", port=5000, debug=True)
