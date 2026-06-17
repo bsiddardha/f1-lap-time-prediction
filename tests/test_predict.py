@@ -1,9 +1,8 @@
-import pytest
+# tests/test_predict.py
 from app import app
 
 client = app.test_client()
 
-# Correct full payload matching all 17 training features
 VALID_PAYLOAD = {
     "Driver": "VER",
     "Team": "Red Bull Racing",
